@@ -53,3 +53,37 @@ def sym_exp_sigmoid(x, width=8.0):
     return exp_sigmoid(width, (torch.abs(x) / 2.0 - 1.0))
 
 
+def remove_above_nyquist(frequency_evelopes: torch.Tensor,
+                         amplitude_evelopes: torch.Tensor,
+                         sample_rate: int = 16000
+                         ) -> torch.Tensor:
+    """ Set amplitudes for oscillators above nyquist to 0."""
+    # TODO: should we change this to max_freq ?
+    amplitude_evelopes[frequency_evelopes > sample_rate / 2] = 0.0
+    return amplitude_evelopes
+
+
+def oscillator_bank(frequency_evelopes: torch.Tensor,
+                    amplitude_envelopes: torch.Tensor,
+                    sample_rate: int = 16000) -> torch.Tensor:
+    """Generates audio from sample-wise frequecies for a bank of oscillators."""
+    amplitude_envelopes = remove_above_nyquist(frequency_evelopes,
+                                               amplitude_envelopes,
+                                               sample_rate)
+    # Change Hz to radians per sample.
+    omegas = frequency_evelopes * (2.0 * np.pi)
+
+    # Accumulate phrase and synthesize.
+    phases = torch.cumsum(omegas, axis=1)
+    wavs = torch.sin(phases)
+    harmonic_audio = amplitude_envelopes * wavs  # [B, n_samples, n_sinusoids]
+    audio = torch.sum(harmonic_audio, axis=-1)
+    return audio
+
+def get_harmonic_frequencies(frequecies: torch.Tensor,
+                             n_harmonics: int) -> torch.Tensor:
+    """Create integer multiples of the fundamental frequency."""
+    f_ratios = torch.linspace(1.0, n_harmonics, n_harmonics)
+    f_ratios = f_ratios.reshape(1, 1, -1)
+    harmonic_frequencies = frequecies * f_ratios
+    return harmonic_frequencies
