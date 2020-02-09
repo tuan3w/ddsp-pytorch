@@ -25,9 +25,7 @@ def resample(inputs: torch.Tensor,
              n_timesteps):
     """Resamples tensor of shape [:, n_frames, :] to [:, n_timesteps, :].
     """
-    methods = {'linear': 0, 'cubic': 2}
-
-    if len(input.shape) == 2:
+    if len(inputs.shape) == 2:
         inputs = inputs.unsqueeze(-1)
 
     outputs = inputs.unsqueeze(-1).transpose(1, 2)
