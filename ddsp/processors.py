@@ -6,14 +6,14 @@ class Processor(nn.Module):
     def __init__(self):
         super(Processor, self).__init__()
 
-    def forward(self, *input, **kwargs):
-        controls = self.get_controls(*args, **kargs)
+    def forward(self, *args, **kwargs):
+        controls = self.get_controls(*args, **kwargs)
         signal = self.get_signal(**controls)
         return signal
 
     def get_controls(self, *args, **kwargs):
         """Convert input tensors into a dict of processor controls."""
-        rase NotImplementedError
+        raise NotImplementedError
 
     def get_signal(self, *args, **kwargs) -> torch.Tensor:
         raise NotImplementedError

@@ -1,7 +1,10 @@
-import torch
 import math
+
+import numpy as np
+import torch
 from torch.nn import functional as F
 
+LOG2 = math.log(2)
 
 def midi_to_hz(notes):
     """converts midi to hz"""
@@ -9,11 +12,11 @@ def midi_to_hz(notes):
 
 
 def log2(x):
-    return math.log(x) / math.log(2)
+    return math.log(x) / LOG2
 
 
 def tensor_log2(x):
-    return torch.log(x) / math.log(2)
+    return torch.log(x) / LOG2
 
 
 def hz_to_midi(frequences):
