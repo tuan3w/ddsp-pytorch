@@ -60,3 +60,46 @@ class Mix(Processor):
 
     def get_signal(self, signal_one, signal_two, mix_level):
         return mix_level * signal_one + (1-mix_level) * signal_two
+
+
+class FilteredNoise(Processor):
+    """Synthesize audio by filtering white noise."""
+
+    def __init__(self,
+                 n_samples=64000,
+                 window_size=257,
+                 scale_fn=torch.sigmoid,
+                 initial_bias=-5.0
+                 ):
+        self.n_samples= n_samples
+        self.window_size = window_size
+        self.scale_fn = scale_fn
+        self.initial_bias = initial_bias
+    
+    def get_controls(self, magnitudes):
+        """Converts network outputs into a dictionary of synthesizer controls.
+
+        Args:
+            magnitude (B x T x n_filter_banks): input tensor
+        
+        Returns:
+            controls: Dictionary of tensors of synthesizer controls.
+        """
+        if self.scale_fn is not None:
+            magnitudes = self.scale_fn(magnitudes + self.initial_bias, axis=-1)
+        
+        return {'magnitudes': magnitudes}
+    
+    def get_signal(self, magnitudes: torch.Tensor):
+        """Synthesizes audio with filtered white noise.
+
+        Args:
+            magnitudes (B x T x n_filter_banks): input tensor
+        
+        Returns:
+            signal: A tensor of hamonic waves of shape (B x n_samples x 1)
+        """
+
+        batch_size = magnitudes.shape[0]
+        signal = torch.rand(B, self.n_samples)
+        core.

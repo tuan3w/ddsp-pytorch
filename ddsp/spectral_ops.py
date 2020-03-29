@@ -156,13 +156,44 @@ def compute_loudness(audio,
     window = torch.hann_window(n_fft).to(audio.device)
     stft = compute_stft(audio, n_fft, window=window,
                         hop_length=hop_length, center=center)
-    print(stft.shape, audio.shape, n_fft, window.shape, hop_length)
 
     amplitude = torch.sqrt(stft[:, :, :, 0] ** 2 + stft[:, :, :, 1] ** 2)
 
     # perceptual weighting.
     # copy directly from https://github.com/pytorch/audio/blob/933f6037e0b9bbe51c7720c5d3ba4174dc4f67f9/torchaudio/transforms.py#L140
 
+    db_multiplier = math.log10(max(1e-10, ref_db))
+    power_db = torchaudio.functional.amplitude_to_DB(
+        amplitude, 10, 1e-10, db_multiplier, top_db=top_db)
+    return power_db
+
+
+def compute_loudness_from_spec(amplitude,
+                               sample_rate=16000,
+                               n_fft=2048,
+                               hop_length=None,
+                               top_db=LD_RANGE,
+                               ref_db=20.7,
+                               center=True
+                               ) -> torch.Tensor:
+    """Compute perceptual loudness in dB, related to white noise, amplitude =1
+
+    Args:
+        spec (B, T): input audio spectrogram
+        n_fft: fft window size.
+        top_db:Sets the dyamic range of loudness in decibles. The minimum 
+            loudness (per  a frequency bin) corresponds to -range_db.
+        ref_db: Sets the reference maximum perceptual loudness as given by 
+            (A_weighting +10 * log10(abs(sttf(audio))**2.0)).The default value
+            corresponds to white noise with amplitude=1.0 and n_fft=2048. There is a 
+            slight dependence on n_fft due to different graluariy of perceptual weighting.
+
+    Returns:
+        Loudness in decibles, shape (B, n_frames)
+    """
+
+    # perceptual weighting.
+    # copy directly from https://github.com/pytorch/audio/blob/933f6037e0b9bbe51c7720c5d3ba4174dc4f67f9/torchaudio/transforms.py#L140
     db_multiplier = math.log10(max(1e-10, ref_db))
     power_db = torchaudio.functional.amplitude_to_DB(
         amplitude, 10, 1e-10, db_multiplier, top_db=top_db)
